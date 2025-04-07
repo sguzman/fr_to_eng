@@ -1,8 +1,8 @@
 from transformers import MarianMTModel, MarianTokenizer
 import os
 
-# Load MarianMT model for German to English
-model_name = "Helsinki-NLP/opus-mt-de-en"
+# Load MarianMT model for French to English
+model_name = "Helsinki-NLP/opus-mt-fr-en"
 tokenizer = MarianTokenizer.from_pretrained(model_name)
 model = MarianMTModel.from_pretrained(model_name)
 
@@ -12,7 +12,7 @@ def translate_chunk(text):
     translated = model.generate(**tokens)
     return tokenizer.decode(translated[0], skip_special_tokens=True)
 
-# Read the full German text
+# Read the full French text
 def read_text(filepath):
     with open(filepath, 'r', encoding='utf-8') as file:
         return file.read()
@@ -25,8 +25,8 @@ def split_into_chunks(text, max_chars=1500):
 # Translate entire text file
 def translate_file(input_path, output_path):
     print("Reading input...")
-    german_text = read_text(input_path)
-    chunks = split_into_chunks(german_text)
+    french_text = read_text(input_path)
+    chunks = split_into_chunks(french_text)
 
     print(f"Translating {len(chunks)} chunks...")
     translated_chunks = []
@@ -44,7 +44,7 @@ def translate_file(input_path, output_path):
 
 # === Usage ===
 if __name__ == "__main__":
-    input_txt = "german_input.txt"      # Replace with your file
+    input_txt = "french.txt"      # Replace with your file
     output_txt = "translated_output.txt"
     translate_file(input_txt, output_txt)
 
