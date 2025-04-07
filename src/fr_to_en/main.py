@@ -1,8 +1,9 @@
 import logging
-from transformers import MarianMTModel, MarianTokenizer
 import textwrap
+import torch
+from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
 
-# === Setup logging ===
+# === Logging config ===
 logging.basicConfig(
     level=logging.DEBUG,
     format="%(asctime)s [%(levelname)s] %(message)s",
@@ -11,23 +12,35 @@ logging.basicConfig(
         logging.StreamHandler()
     ]
 )
-
 logger = logging.getLogger(__name__)
 
-# === Load MarianMT French → English ===
-model_name = "Helsinki-NLP/opus-mt-fr-en"
-logger.info(f"Loading model: {model_name}")
-tokenizer = MarianTokenizer.from_pretrained(model_name)
-model = MarianMTModel.from_pretrained(model_name)
+# === GPU support ===
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+logger.info(f"Using device: {device}")
+
+# === Load NLLB-200 model ===
+model_name = "facebook/nllb-200-distilled-600M"
+tokenizer = AutoTokenizer.from_pretrained(model_name)
+model = AutoModelForSeq2SeqLM.from_pretrained(model_name).to(device)
+
+source_lang = "fra_Latn"
+target_lang = "eng_Latn"
 
 # === Translate one chunk ===
 def translate_chunk(text: str) -> str:
-    tokens = tokenizer.prepare_seq2seq_batch([text], return_tensors="pt", truncation=True)
-    translated = model.generate(**tokens)
-    return tokenizer.decode(translated[0], skip_special_tokens=True)
+    tokens = tokenizer(
+        text,
+        return_tensors="pt",
+        padding=True,
+        truncation=True,
+        max_length=512
+    ).to(device)
+    tokens["forced_bos_token_id"] = tokenizer.lang_code_to_id[target_lang]
+    translated_tokens = model.generate(**tokens)
+    return tokenizer.decode(translated_tokens[0], skip_special_tokens=True)
 
-# === Split input ===
-def split_into_chunks(text: str, max_chars: int = 1500) -> list[str]:
+# === Chunk text ===
+def split_into_chunks(text: str, max_chars: int = 1000) -> list[str]:
     return textwrap.wrap(text, width=max_chars, break_long_words=False, break_on_hyphens=False)
 
 # === File I/O ===
@@ -72,7 +85,7 @@ def translate_file(input_path: str, output_path: str):
 
 # === Entrypoint ===
 if __name__ == "__main__":
-    input_txt = "french_input.txt"     # Change if needed
+    input_txt = "french_input.txt"     # Customize as needed
     output_txt = "translated_output.txt"
     translate_file(input_txt, output_txt)
 
