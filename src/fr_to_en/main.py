@@ -20,7 +20,10 @@ logger.info(f"Using device: {device}")
 
 # === Load NLLB-200 model ===
 model_name = "facebook/nllb-200-distilled-600M"
-tokenizer = AutoTokenizer.from_pretrained(model_name)
+from transformers import NllbTokenizer
+tokenizer = NllbTokenizer.from_pretrained(model_name)
+logger.debug(f"Available language codes: {tokenizer.lang_code_to_id.keys()}")
+
 model = AutoModelForSeq2SeqLM.from_pretrained(model_name).to(device)
 
 source_lang = "fra_Latn"
