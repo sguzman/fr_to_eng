@@ -1,3 +1,1 @@
-2025-04-07 16:52:36,965 [INFO] Using device: cpu
-2025-04-07 16:52:36,967 [DEBUG] Starting new HTTPS connection (1): huggingface.co:443
-2025-04-07 16:52:37,071 [DEBUG] https://huggingface.co:443 "HEAD /facebook/nllb-200-distilled-600M/resolve/main/tokenizer_config.json HTTP/1.1" 200 0
+2025-04-07 16:54:11,359 [ERROR] ❌ No GPU found. This script requires a GPU for translation.

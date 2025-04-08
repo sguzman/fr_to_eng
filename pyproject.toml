@@ -6,9 +6,8 @@ authors = [
     { name = "Salvador Guzman", email = "guzmansalv@gmail.com" }
 ]
 dependencies = [
-    "transformers==4.50.3",
+    "transformers>=4.51.0",
     "sentencepiece>=0.2.0",
-    "torch>=2.6.0",
     "sacremoses>=0.1.1",
 ]
 readme = "README.md"

@@ -1,9 +1,10 @@
 import logging
 import textwrap
 import torch
-from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
+import sys
+from transformers import AutoModelForSeq2SeqLM, NllbTokenizer
 
-# === Logging config ===
+# === Setup logging ===
 logging.basicConfig(
     level=logging.DEBUG,
     format="%(asctime)s [%(levelname)s] %(message)s",
@@ -14,22 +15,24 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# === GPU support ===
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-logger.info(f"Using device: {device}")
+# === GPU check ===
+if not torch.cuda.is_available():
+    logger.error("❌ No GPU found. This script requires a GPU for translation.")
+    sys.exit(1)
 
-# === Load NLLB-200 model ===
+device = torch.device("cuda")
+logger.info(f"✅ Using GPU device: {torch.cuda.get_device_name(0)}")
+
+# === Load model and tokenizer ===
 model_name = "facebook/nllb-200-distilled-600M"
-from transformers import NllbTokenizer
 tokenizer = NllbTokenizer.from_pretrained(model_name)
-logger.debug(f"Available language codes: {tokenizer.lang_code_to_id.keys()}")
-
 model = AutoModelForSeq2SeqLM.from_pretrained(model_name).to(device)
 
+# === Language codes ===
 source_lang = "fra_Latn"
 target_lang = "eng_Latn"
 
-# === Translate one chunk ===
+# === Translation function ===
 def translate_chunk(text: str) -> str:
     tokens = tokenizer(
         text,
@@ -42,7 +45,7 @@ def translate_chunk(text: str) -> str:
     translated_tokens = model.generate(**tokens)
     return tokenizer.decode(translated_tokens[0], skip_special_tokens=True)
 
-# === Chunk text ===
+# === Split text into chunks ===
 def split_into_chunks(text: str, max_chars: int = 1000) -> list[str]:
     return textwrap.wrap(text, width=max_chars, break_long_words=False, break_on_hyphens=False)
 
@@ -55,40 +58,40 @@ def write_text(filepath: str, text: str):
     with open(filepath, 'w', encoding='utf-8') as f:
         f.write(text)
 
-# === Main translation pipeline ===
+# === Main pipeline ===
 def translate_file(input_path: str, output_path: str):
-    logger.info(f"Reading input from {input_path}")
+    logger.info(f"📖 Reading input from: {input_path}")
     french_text = read_text(input_path)
 
-    logger.info("Splitting into chunks...")
+    logger.info("✂️ Splitting text into chunks...")
     chunks = split_into_chunks(french_text)
 
-    logger.info(f"{len(chunks)} chunks created. Beginning translation...")
+    logger.info(f"🔁 {len(chunks)} chunks to translate.")
 
     translated_chunks = []
     for i, chunk in enumerate(chunks):
         logger.debug(f"\n--- Chunk {i + 1} / {len(chunks)} ---")
-        logger.debug(f"[FRENCH] {chunk}\n")
+        logger.debug(f"[FRENCH]\n{chunk}\n")
 
         try:
             translation = translate_chunk(chunk)
         except Exception as e:
-            logger.error(f"Error translating chunk {i+1}: {e}")
+            logger.error(f"⚠️ Error translating chunk {i+1}: {e}")
             translation = "[ERROR IN TRANSLATION]"
 
-        logger.debug(f"[ENGLISH] {translation}\n")
+        logger.debug(f"[ENGLISH]\n{translation}\n")
         translated_chunks.append(translation)
 
     final_output = "\n\n".join(translated_chunks)
 
-    logger.info(f"Writing translated output to {output_path}")
+    logger.info(f"💾 Writing translated output to: {output_path}")
     write_text(output_path, final_output)
 
     logger.info("✅ Translation complete.")
 
 # === Entrypoint ===
 if __name__ == "__main__":
-    input_txt = "french_input.txt"     # Customize as needed
+    input_txt = "french_input.txt"
     output_txt = "translated_output.txt"
     translate_file(input_txt, output_txt)
 
