@@ -24,7 +24,7 @@ device = torch.device("cuda")
 logger.info(f"✅ Using GPU device: {torch.cuda.get_device_name(0)}")
 
 # === Load NLLB-200 model and tokenizer ===
-model_name = "facebook/nllb-200-distilled-600M"
+model_name = "facebook/nllb-200-3.3B"
 tokenizer = NllbTokenizer.from_pretrained(model_name)
 model = AutoModelForSeq2SeqLM.from_pretrained(model_name, use_safetensors=False).to(device)
 
